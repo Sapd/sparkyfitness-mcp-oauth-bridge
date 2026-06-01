@@ -1,0 +1,12 @@
+{
+  "name": "sparkyfitness-mcp-oauth-shim",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "server.js",
+  "dependencies": {
+    "express": "^4.21.2",
+    "jose": "^5.9.6",
+    "pg": "^8.13.1"
+  }
+}

@@ -1,0 +1,9 @@
+# Secrets & runtime state — never commit
+shim.env
+.env
+data/
+keys.json
+
+# Node
+node_modules/
+npm-debug.log*
