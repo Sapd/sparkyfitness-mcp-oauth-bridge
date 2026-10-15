@@ -1,5 +1,6 @@
 import express from "express";
 import http from "node:http";
+import https from "node:https";
 import crypto from "node:crypto";
 import fs from "node:fs";
 import pg from "pg";
@@ -11,7 +12,8 @@ const ORIGIN = new URL(RESOURCE_URL).origin;
 const MODE = env.MODE || "direct";
 const ISSUER = env.ISSUER;                             // https://idp.example.com/application/o/your-app/
 const USERINFO_URL = env.USERINFO_URL;                 // https://idp.example.com/application/o/userinfo/
-const UPSTREAM = new URL(env.UPSTREAM);                // http://sparkyfitness-mcp:3001
+const UPSTREAM = new URL(env.UPSTREAM);                // http://sparkyfitness-mcp:3001 (https:// works too)
+const UPSTREAM_TLS = UPSTREAM.protocol === "https:";
 const KEY_STORE = env.KEY_STORE || "/data/keys.json";
 const KEY_NAME = env.KEY_NAME || "mcp";
 const OAUTH_STORE = env.OAUTH_STORE || "/data/oauth.json";
@@ -423,12 +425,12 @@ app.use("/mcp", authenticate, (req, res) => {
   delete headers.authorization;
   const opts = {
     hostname: UPSTREAM.hostname,
-    port: UPSTREAM.port || 80,
-    path: req.originalUrl,
+    port: UPSTREAM.port || (UPSTREAM_TLS ? 443 : 80),
+    path: UPSTREAM.pathname.replace(/\/$/, "") + req.originalUrl, // keep a path prefix in UPSTREAM
     method: req.method,
     headers,
   };
-  const up = http.request(opts, (ur) => {
+  const up = (UPSTREAM_TLS ? https : http).request(opts, (ur) => {
     res.writeHead(ur.statusCode || 502, ur.headers);
     ur.pipe(res);
   });
