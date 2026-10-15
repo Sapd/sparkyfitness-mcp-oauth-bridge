@@ -1,7 +1,9 @@
 # Secrets & runtime state — never commit
 shim.env
+broker.env
 .env
 data/
+data-broker/
 keys.json
 
 # Node

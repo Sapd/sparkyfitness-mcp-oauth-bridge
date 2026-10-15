@@ -1,4 +1,5 @@
 services:
+  # Direct mode: Claude connectors (and Open WebUI). Validates IdP tokens via userinfo.
   shim:
     build: .
     image: sparkyfitness-mcp-oauth-bridge:local
@@ -10,7 +11,7 @@ services:
     networks:
       - sparkyfitness-network
     restart: always
-    healthcheck:
+    healthcheck: &healthcheck
       test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:8080/health',(r)=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
       interval: 10s
       timeout: 5s
@@ -21,6 +22,26 @@ services:
       - traefik.enable=true
       - traefik.http.routers.sparkymcpoauth.rule=Host(`mcp-oauth.example.com`)
       - traefik.http.services.sparkymcpoauth.loadbalancer.server.port=8080
+
+  # Broker mode (optional): ChatGPT and other clients that need Dynamic Client Registration.
+  # Start it with `docker compose --profile broker up -d`.
+  broker:
+    profiles: [broker]
+    build: .
+    image: sparkyfitness-mcp-oauth-bridge:local
+    container_name: sparkyfitness-mcp-oauth-broker
+    env_file:
+      - ./broker.env
+    volumes:
+      - ./data-broker:/data
+    networks:
+      - sparkyfitness-network
+    restart: always
+    healthcheck: *healthcheck
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.sparkymcpbroker.rule=Host(`mcp-broker.example.com`)
+      - traefik.http.services.sparkymcpbroker.loadbalancer.server.port=8080
 
 # Join the existing Docker network that the SparkyFitness stack created, so this
 # bridge can reach `sparkyfitness-mcp` and `sparkyfitness-db` by name.
